@@ -100,14 +100,18 @@ export default function App() {
 
   // 투 두 텍스트 업데이트
   const editTodo = (key, newText) => {
-    if (newText === "") deleteTodo(key);
     const newTodos = { ...todos };
     newTodos[key].text = newText;
     setTodos(newTodos);
     saveTodos(newTodos);
   };
 
-  const endEditTodo = (key) => {};
+  const endEditTodo = (key) => {
+    const newTodos = { ...todos };
+    newTodos[key].isEdit = false;
+    setTodos(newTodos);
+    saveTodos(newTodos);
+  };
 
   // 선택했던 카테고리 유지
   const loadWorking = async () => {
