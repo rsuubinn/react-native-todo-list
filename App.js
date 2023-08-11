@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Fontisto } from "@expo/vector-icons";
+import { Fontisto, AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { theme } from "./colors";
 
 const STORAGE_TODOS_KEY = "@toDos";
@@ -42,7 +42,7 @@ export default function App() {
     const newTodos = Object.assign(
       { ...todos },
       {
-        [Date.now()]: { text, working },
+        [Date.now()]: { text, working, completed: false },
       }
     );
     setTodos(newTodos);
@@ -69,6 +69,20 @@ export default function App() {
         },
       },
     ]);
+  };
+
+  const editTodo = (key) => {
+    const newTodos = { ...todos };
+  };
+
+  const completeTodo = (key) => {
+    const newTodo = todos[key];
+    const newTodos = Object.assign(
+      { ...todos },
+      { [key]: { ...newTodo, completed: !newTodo.completed } }
+    );
+    setTodos(newTodos);
+    saveTodos(newTodos);
   };
 
   const loadWorking = async () => {
@@ -121,13 +135,43 @@ export default function App() {
         {Object.keys(todos).map((key) =>
           todos[key].working === working ? (
             <View style={styles.todo} key={key}>
-              <Text style={styles.todoText}>{todos[key].text}</Text>
-              <TouchableOpacity onPress={() => deleteTodo(key)}>
-                <Fontisto name="pencil" color={theme.grey} size={18}></Fontisto>
+              <TouchableOpacity onPress={() => completeTodo(key)}>
+                <MaterialIcons
+                  name={
+                    todos[key].completed
+                      ? "check-box"
+                      : "check-box-outline-blank"
+                  }
+                  color={theme.grey}
+                  size={18}
+                ></MaterialIcons>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteTodo(key)}>
-                <Fontisto name="trash" color={theme.grey} size={18}></Fontisto>
-              </TouchableOpacity>
+              <Text
+                style={{
+                  ...styles.todoText,
+                  textDecorationLine: todos[key].completed
+                    ? "line-through"
+                    : null,
+                }}
+              >
+                {todos[key].text}
+              </Text>
+              <View style={styles.icons}>
+                <TouchableOpacity onPress={() => editTodo(key)}>
+                  <AntDesign
+                    name="edit"
+                    color={theme.grey}
+                    size={18}
+                  ></AntDesign>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => deleteTodo(key)}>
+                  <Fontisto
+                    name="trash"
+                    color={theme.grey}
+                    size={18}
+                  ></Fontisto>
+                </TouchableOpacity>
+              </View>
             </View>
           ) : null
         )}
@@ -175,5 +219,8 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "500",
+  },
+  icons: {
+    flexDirection: "row",
   },
 });
