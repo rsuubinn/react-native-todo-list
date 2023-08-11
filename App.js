@@ -20,6 +20,7 @@ export default function App() {
   const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [todos, setTodos] = useState([]);
+
   const work = async () => {
     setWorking(true);
     await AsyncStorage.setItem(STORAGE_WORKING_KEY, JSON.stringify(true));
@@ -33,16 +34,29 @@ export default function App() {
     setText(payload);
   };
 
+  const onClickEditBtn = (key) => {
+    const newTodo = todos[key];
+    const newIsEdit = !newTodo.isEdit;
+    const newTodos = Object.assign(
+      { ...todos },
+      { [key]: { ...newTodo, isEdit: newIsEdit } }
+    );
+    setTodos(newTodos);
+    saveTodos(newTodos);
+  };
+
+  // 투 두 저장하기
   const saveTodos = async (saveTodo) => {
     await AsyncStorage.setItem(STORAGE_TODOS_KEY, JSON.stringify(saveTodo));
   };
 
+  // 투 두 추가하기
   const addToDo = async () => {
     if (text === "") return;
     const newTodos = Object.assign(
       { ...todos },
       {
-        [Date.now()]: { text, working, completed: false },
+        [Date.now()]: { text, working, completed: false, isEdit: false },
       }
     );
     setTodos(newTodos);
@@ -50,11 +64,13 @@ export default function App() {
     setText("");
   };
 
+  // 투 두 불러오기
   const loadTodos = async () => {
     const s = await AsyncStorage.getItem(STORAGE_TODOS_KEY);
     s !== null ? setTodos(JSON.parse(s)) : null;
   };
 
+  // 투 두 삭제하기
   const deleteTodo = (key) => {
     Alert.alert("삭제", "정말 삭제하시겠습니까?", [
       { text: "취소" },
@@ -71,10 +87,7 @@ export default function App() {
     ]);
   };
 
-  const editTodo = (key) => {
-    const newTodos = { ...todos };
-  };
-
+  // 투 두 완료하기
   const completeTodo = (key) => {
     const newTodo = todos[key];
     const newTodos = Object.assign(
@@ -85,6 +98,18 @@ export default function App() {
     saveTodos(newTodos);
   };
 
+  // 투 두 텍스트 업데이트
+  const editTodo = (key, newText) => {
+    if (newText === "") deleteTodo(key);
+    const newTodos = { ...todos };
+    newTodos[key].text = newText;
+    setTodos(newTodos);
+    saveTodos(newTodos);
+  };
+
+  const endEditTodo = (key) => {};
+
+  // 선택했던 카테고리 유지
   const loadWorking = async () => {
     const nowWorking = await AsyncStorage.getItem(STORAGE_WORKING_KEY);
     nowWorking ? setWorking(JSON.parse(nowWorking)) : null;
@@ -94,6 +119,7 @@ export default function App() {
     loadTodos();
     loadWorking();
   }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -129,7 +155,6 @@ export default function App() {
         placeholder={
           working ? "할 일을 입력해주세요." : "어디로 가고 싶으신가요?"
         }
-        keyboardType="numeric"
       />
       <ScrollView>
         {Object.keys(todos).map((key) =>
@@ -146,18 +171,31 @@ export default function App() {
                   size={18}
                 ></MaterialIcons>
               </TouchableOpacity>
-              <Text
-                style={{
-                  ...styles.todoText,
-                  textDecorationLine: todos[key].completed
-                    ? "line-through"
-                    : null,
-                }}
-              >
-                {todos[key].text}
-              </Text>
+              {todos[key].isEdit ? (
+                <TextInput
+                  style={styles.todoTextEditing}
+                  value={todos[key].text}
+                  onChangeText={(newText) => editTodo(key, newText)}
+                  autoFocus={true}
+                  returnKeyType="done"
+                  onBlur={() => endEditTodo(key)}
+                />
+              ) : (
+                <Text
+                  style={[
+                    todos[key].completed
+                      ? styles.todoCompleted
+                      : styles.todoText,
+                  ]}
+                >
+                  {todos[key].text}
+                </Text>
+              )}
               <View style={styles.icons}>
-                <TouchableOpacity onPress={() => editTodo(key)}>
+                <TouchableOpacity
+                  style={{ display: todos[key].completed ? "none" : null }}
+                  onPress={() => onClickEditBtn(key)}
+                >
                   <AntDesign
                     name="edit"
                     color={theme.grey}
@@ -219,6 +257,21 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "500",
+  },
+  todoCompleted: {
+    textDecorationLine: "line-through",
+    opacity: 0.5,
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  todoTextEditing: {
+    color: "black",
+    fontSize: 16,
+    fontWeight: "500",
+    backgroundColor: "white",
+    paddingHorizontal: 10,
+    fontSize: 16,
   },
   icons: {
     flexDirection: "row",
